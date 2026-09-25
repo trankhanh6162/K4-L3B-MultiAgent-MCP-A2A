@@ -180,7 +180,11 @@ def _build_facts(
         if event.get("order_id") == selected_order_id and event.get("event_at", "") >= purchased_at
     ]
     captured = sum(
-        (_money(event.get("amount_brl")) for event in payment_events if event.get("event_type") == "captured"),
+        (
+            _money(event.get("amount_brl"))
+            for event in payment_events
+            if event.get("event_type") == "captured"
+        ),
         Decimal("0"),
     )
     refunded = sum(
