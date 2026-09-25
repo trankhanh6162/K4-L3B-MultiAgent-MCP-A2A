@@ -33,9 +33,10 @@ produces one JSON object. It is not allowed to issue tools or create evidence re
 | Conflict resolver | All specialist evidence | Produce schema-shaped decision | OpenAI only, no MCP | Draft output to verifier |
 | Verifier | Draft and evidence set | Schema, provenance and consistency checks | None | Verified output or bounded failure |
 
-Tool access follows least privilege. The normal plan makes eight audited MCP calls: two order
-candidate lookups and six scoped specialist lookups. Refund-related topics may add one optional
-refund timeline lookup. Failed candidate lookup does not trigger an unbounded retry.
+Tool access follows least privilege. The normal plan makes seven audited MCP calls: one
+authoritative order lookup and six scoped specialist lookups. Synthetic `candidate-*` decoys are
+rejected without an audited lookup because those calls return no evidence. Payment mismatch and
+refund lifecycle topics add one refund timeline lookup.
 
 ## 3. Entity resolution and A2A protocol
 

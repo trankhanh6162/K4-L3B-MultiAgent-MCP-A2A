@@ -147,7 +147,11 @@ def test_solve_case_uses_bounded_evidence_plan(monkeypatch: Any) -> None:
     output = asyncio.run(workflow.solve_case(case, gateway, trace))
 
     assert output["case_id"] == case["case_id"]
-    assert len(gateway.calls) == 8
+    assert len(gateway.calls) == 7
+    assert all(
+        len(claim["evidence_refs"]) < len(output["evidence_refs"])
+        for claim in output["claim_assessments"]
+    )
     assert {event["event_type"] for event in trace.events} >= {
         "task_assigned",
         "tool_result_consumed",

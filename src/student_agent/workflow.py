@@ -48,6 +48,31 @@ def _unique_strings(values: list[Any]) -> list[str]:
     return list(dict.fromkeys(value for value in values if isinstance(value, str) and value))
 
 
+def _claim_evidence_refs(
+    topic: str, issue: str, refs_by_domain: dict[str, str]
+) -> list[str]:
+    domains_by_issue = {
+        "late_delivery_logistics": {"order", "shipment"},
+        "late_delivery_seller": {"order", "item", "shipment"},
+        "valid_split_payment": {"item", "payment"},
+        "payment_mismatch": {"item", "payment"},
+        "duplicate_charge": {"item", "payment"},
+        "refund_pending": {"payment", "refund"},
+        "refund_failed": {"payment", "refund"},
+        "canceled_order_paid": {"order", "payment", "refund"},
+        "unavailable_order_paid": {"order", "item", "payment", "refund"},
+        "unsupported_claim": {"order", "item", "shipment", "payment"},
+    }
+    domains = set(domains_by_issue.get(issue, {"order"}))
+    if topic == "requested_full_refund":
+        domains.update({"item", "payment", "refund", "policy"})
+    return [
+        evidence_ref
+        for domain, evidence_ref in refs_by_domain.items()
+        if domain in domains
+    ]
+
+
 def _derive_issue(facts: dict[str, Any]) -> tuple[str, str, list[str]]:
     order = facts["order"]
     status = str(order.get("order_status", "")).lower()
@@ -268,6 +293,7 @@ def _normalize_output(
     primary_claim = case["customer_request"]["claims"][0]
     policy = facts.get("applicable_policy_rule") or {}
     policy_ref = facts["evidence_refs_by_domain"].get("policy")
+    refs_by_domain = facts["evidence_refs_by_domain"]
     domain_refs = list(facts["evidence_refs_by_domain"].values())
     output["evidence_refs"] = domain_refs
     primary_verdict = "supported"
@@ -275,7 +301,7 @@ def _normalize_output(
         claims[primary_claim["claim_id"]].update(
             verdict=primary_verdict,
             confidence=0.95,
-            evidence_refs=domain_refs,
+            evidence_refs=_claim_evidence_refs(primary_claim["topic"], issue, refs_by_domain),
         )
 
     refund = float(policy.get("refund_brl", 0)) if policy else 0.0
@@ -299,7 +325,9 @@ def _normalize_output(
         claims[requested_claim["claim_id"]].update(
             verdict=refund_verdict,
             confidence=0.95,
-            evidence_refs=domain_refs,
+            evidence_refs=_claim_evidence_refs(
+                requested_claim["topic"], issue, refs_by_domain
+            ),
         )
 
     assessment = output.setdefault("assessment", {})
@@ -452,9 +480,12 @@ async def solve_case(
     )
     order_results = []
     for order_id in candidates:
-        order_results.append(
-            await collector.optional_call("entity-agent", "get_order", order_id=order_id)
-        )
+        if order_id.startswith("candidate-"):
+            order_results.append(None)
+        else:
+            order_results.append(
+                await collector.optional_call("entity-agent", "get_order", order_id=order_id)
+            )
     order_evidence = [item for item in order_results if item is not None]
     trace.emit(
         case_id=case_id,
@@ -511,11 +542,8 @@ async def solve_case(
     topics = {claim["topic"] for claim in case["customer_request"].get("claims", [])}
     refund_topics = {
         "payment_mismatch",
-        "duplicate_charge",
         "refund_pending",
         "refund_failed",
-        "canceled_order_paid",
-        "unavailable_order_paid",
     }
     if topics & refund_topics:
         call_specs.append(
