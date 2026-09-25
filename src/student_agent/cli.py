@@ -23,11 +23,28 @@ async def _show_tools(root: Path) -> None:
     settings = Settings.load(root)
     contracts = Contracts(root / "contracts" / "schemas")
     async with connect_gateway(settings.mcp_endpoint, settings.team_api_key, contracts) as gateway:
-        for tool in await gateway.list_tools():
-            print(tool)
+        for name, tool in sorted((await gateway.discover()).items()):
+            properties = tool.input_schema.get("properties", {})
+            required = set(tool.input_schema.get("required", []))
+            arguments = ", ".join(
+                f"{argument}{'*' if argument in required else ''}" for argument in properties
+            )
+            print(f"{name}({arguments})")
 
 
-async def _run(root: Path) -> None:
+def _drop_unfinished_trace(trace_path: Path, finished: set[str]) -> None:
+    """Keep trace events only for cases whose output was written; unfinished ones rerun."""
+    if not trace_path.exists():
+        return
+    kept = [
+        line
+        for line in trace_path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and json.loads(line)["case_id"] in finished
+    ]
+    trace_path.write_text("".join(f"{line}\n" for line in kept), encoding="utf-8")
+
+
+async def _run(root: Path, selected_case_id: str | None = None, resume: bool = False) -> None:
     settings = Settings.load(root)
     case_set = load_case_set(root)
     contracts = Contracts(root / "contracts" / "schemas")
@@ -35,16 +52,28 @@ async def _run(root: Path) -> None:
     trace_path = root / "traces" / "trace.jsonl"
     output_root.mkdir(parents=True, exist_ok=True)
     trace_path.parent.mkdir(parents=True, exist_ok=True)
-    for stale in output_root.glob("*.json"):
-        stale.unlink()
-    trace_path.unlink(missing_ok=True)
+    finished: set[str] = set()
+    if selected_case_id is not None:
+        if selected_case_id not in case_set.cases:
+            raise ValueError(f"unknown case ID: {selected_case_id}")
+    elif resume:
+        finished = {path.stem for path in output_root.glob("*.json")} & set(case_set.case_ids)
+        _drop_unfinished_trace(trace_path, finished)
+    else:
+        for stale in output_root.glob("*.json"):
+            stale.unlink()
+        trace_path.unlink(missing_ok=True)
     trace = TraceWriter(trace_path, contracts)
 
     async with connect_gateway(settings.mcp_endpoint, settings.team_api_key, contracts) as gateway:
         discovered_tools = await gateway.list_tools()
         if not discovered_tools:
             raise RuntimeError("MCP Gateway returned no tools")
-        for case_id in case_set.case_ids:
+        case_ids = (selected_case_id,) if selected_case_id else case_set.case_ids
+        for case_id in case_ids:
+            if case_id in finished:
+                continue
+            print(f"running {case_id}", flush=True)
             case = case_set.cases[case_id]
             trace.emit(case_id=case_id, event_type="case_received", actor="coordinator")
             output = await solve_case(case, gateway, trace)
@@ -66,7 +95,11 @@ def parser() -> argparse.ArgumentParser:
     commands = result.add_subparsers(dest="command", required=True)
     commands.add_parser("validate-inputs", help="validate case-set.json and all 100 inputs")
     commands.add_parser("mcp-tools", help="authenticate and list discovered MCP tools")
-    commands.add_parser("run", help="run the implemented workflow for all cases")
+    run = commands.add_parser("run", help="run the implemented workflow")
+    run.add_argument("--case", dest="case_id", help="run only one case during development")
+    run.add_argument(
+        "--resume", action="store_true", help="keep finished outputs and run only missing cases"
+    )
     commands.add_parser("validate", help="validate outputs and observable trace")
     package = commands.add_parser("package", help="validate and build the submission ZIP")
     package.add_argument("--output", default="dist/submission.zip")
@@ -80,13 +113,12 @@ def main() -> None:
         if args.command == "validate-inputs":
             case_set = load_case_set(root)
             print(
-                f"OK: {case_set.variant_id} / {case_set.version} / "
-                f"{len(case_set.case_ids)} cases"
+                f"OK: {case_set.variant_id} / {case_set.version} / {len(case_set.case_ids)} cases"
             )
         elif args.command == "mcp-tools":
             asyncio.run(_show_tools(root))
         elif args.command == "run":
-            asyncio.run(_run(root))
+            asyncio.run(_run(root, args.case_id, args.resume))
         elif args.command == "validate":
             case_set = load_case_set(root)
             contracts = Contracts(root / "contracts" / "schemas")
@@ -98,6 +130,16 @@ def main() -> None:
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         raise SystemExit(1) from exc
+    except BaseExceptionGroup as group:
+        # The MCP client's task group wraps errors raised inside the gateway session.
+        matched, _ = group.split((OSError, RuntimeError, ValueError))
+        if matched is None:
+            raise
+        leaf: BaseException = matched
+        while isinstance(leaf, BaseExceptionGroup):
+            leaf = leaf.exceptions[0]
+        print(f"ERROR: {leaf}", file=sys.stderr)
+        raise SystemExit(1) from group
 
 
 if __name__ == "__main__":

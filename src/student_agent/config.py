@@ -16,6 +16,10 @@ class Settings:
     team_api_key: str
     mcp_endpoint: str
     root: Path
+    openrouter_base_url: str
+    openrouter_api_key: str
+    openrouter_model: str
+    openrouter_temperature: float
 
     @classmethod
     def load(cls, root: Path | None = None) -> Settings:
@@ -25,12 +29,37 @@ class Settings:
         team_key = os.getenv("COMPETITION_TEAM_API_KEY", "").strip()
         mcp_endpoint = os.getenv("MCP_ENDPOINT", "").strip()
         errors: list[str] = []
+        openrouter_base_url = (
+            os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").strip().rstrip("/")
+        )
+        openrouter_api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+        openrouter_model = os.getenv("OPENROUTER_MODEL", "qwen/qwen3-8b").strip()
+        try:
+            openrouter_temperature = float(os.getenv("OPENROUTER_TEMPERATURE", "0"))
+        except ValueError:
+            errors.append("OPENROUTER_TEMPERATURE must be a number")
+            openrouter_temperature = 0.0
         if not api_url.startswith(("http://", "https://")):
             errors.append("COMPETITION_API_URL must be an absolute HTTP(S) URL")
         if not TEAM_KEY_PATTERN.fullmatch(team_key):
             errors.append("COMPETITION_TEAM_API_KEY must use the sk-team-... format")
         if not mcp_endpoint.startswith(("http://", "https://")):
             errors.append("MCP_ENDPOINT must be an absolute HTTP(S) URL")
+        if not openrouter_base_url.startswith(("http://", "https://")):
+            errors.append("OPENROUTER_BASE_URL must be an absolute HTTP(S) URL")
+        if not openrouter_model:
+            errors.append("OPENROUTER_MODEL must not be empty")
+        if not 0 <= openrouter_temperature <= 2:
+            errors.append("OPENROUTER_TEMPERATURE must be between 0 and 2")
         if errors:
             raise ValueError("; ".join(errors))
-        return cls(api_url, team_key, mcp_endpoint, resolved_root)
+        return cls(
+            api_url,
+            team_key,
+            mcp_endpoint,
+            resolved_root,
+            openrouter_base_url,
+            openrouter_api_key,
+            openrouter_model,
+            openrouter_temperature,
+        )
