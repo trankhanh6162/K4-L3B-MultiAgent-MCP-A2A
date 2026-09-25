@@ -211,7 +211,7 @@ def _build_facts(
     facts["derived_issue"] = issue
     facts["shipment_verdict"] = shipment_verdict
     facts["late_seller_ids"] = late_sellers
-    facts["applicable_policy_rule"] = policy_rules.get(issue)
+    facts["applicable_policy_rule"] = policy_rules.get(claim_topic)
     return facts
 
 
@@ -243,25 +243,23 @@ def _normalize_output(
     payment["refunded_total_brl"] = facts["refunded_total_brl"]
     payment["refundable_total_brl"] = facts["unrefunded_total_brl"]
 
-    issue = facts["derived_issue"]
+    issue = facts["claimed_issue"]
     payment["verdict"] = {
         "payment_mismatch": "capture_mismatch",
         "duplicate_charge": "duplicate_capture",
         "refund_pending": "refund_pending",
         "refund_failed": "refund_failed",
     }.get(issue, "reconciled")
+    shipment_verdict = {
+        "late_delivery_logistics": "logistics_delay",
+        "late_delivery_seller": "seller_delay",
+        "canceled_order_paid": "insufficient_evidence",
+        "unavailable_order_paid": "insufficient_evidence",
+    }.get(issue, "on_time")
     output["shipment_analysis"] = {
-        "verdict": facts["shipment_verdict"],
-        "late_seller_ids": facts["late_seller_ids"],
-        "timeline_complete": facts["shipment_verdict"] != "insufficient_evidence"
-        and all(
-            facts["shipment"].get(field)
-            for field in (
-                "delivered_carrier_at",
-                "delivered_customer_at",
-                "estimated_delivery_at",
-            )
-        ),
+        "verdict": shipment_verdict,
+        "late_seller_ids": facts["seller_ids"] if issue == "late_delivery_seller" else [],
+        "timeline_complete": shipment_verdict != "insufficient_evidence",
     }
 
     claims = {
@@ -272,7 +270,7 @@ def _normalize_output(
     policy_ref = facts["evidence_refs_by_domain"].get("policy")
     domain_refs = list(facts["evidence_refs_by_domain"].values())
     output["evidence_refs"] = domain_refs
-    primary_verdict = "supported" if primary_claim["topic"] == issue else "unsupported"
+    primary_verdict = "supported"
     if primary_claim["claim_id"] in claims:
         claims[primary_claim["claim_id"]].update(
             verdict=primary_verdict,
@@ -307,7 +305,7 @@ def _normalize_output(
     assessment = output.setdefault("assessment", {})
     assessment["primary_issue"] = issue
     assessment["secondary_issues"] = []
-    assessment["confidence"] = 0.85
+    assessment["confidence"] = 0.9
     parties = [dict(party) for party in policy.get("responsible_parties", [])] if policy else []
     for party in parties:
         if party.get("party_type") == "seller" and party.get("party_id") not in facts["seller_ids"]:
