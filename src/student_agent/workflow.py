@@ -253,9 +253,14 @@ def _normalize_output(
     output["shipment_analysis"] = {
         "verdict": facts["shipment_verdict"],
         "late_seller_ids": facts["late_seller_ids"],
-        "timeline_complete": all(
+        "timeline_complete": facts["shipment_verdict"] != "insufficient_evidence"
+        and all(
             facts["shipment"].get(field)
-            for field in ("delivered_carrier_at", "estimated_delivery_at")
+            for field in (
+                "delivered_carrier_at",
+                "delivered_customer_at",
+                "estimated_delivery_at",
+            )
         ),
     }
 
@@ -302,7 +307,7 @@ def _normalize_output(
     assessment = output.setdefault("assessment", {})
     assessment["primary_issue"] = issue
     assessment["secondary_issues"] = []
-    assessment["confidence"] = 0.95
+    assessment["confidence"] = 0.85
     parties = [dict(party) for party in policy.get("responsible_parties", [])] if policy else []
     for party in parties:
         if party.get("party_type") == "seller" and party.get("party_id") not in facts["seller_ids"]:
