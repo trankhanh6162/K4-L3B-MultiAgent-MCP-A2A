@@ -146,6 +146,20 @@ Hoàn thiện mô tả thiết kế trong `ARCHITECTURE.md`.
 
 ## 6. Chạy và kiểm tra
 
+Workflow hiện dùng OpenAI `gpt-4o-mini` cho Coordinator, Specialists, Policy và
+Verifier; Python kiểm tra evidence, schema và tính tiền. Thêm vào `.env`:
+
+```dotenv
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Cập nhật dependencies bằng `python -m pip install -e ".[dev]"`. Không dùng Team API
+Key thay OpenAI API Key. Một case hoàn chỉnh gọi LLM 7 lần (chưa tính retry).
+Thiếu key hoặc API lỗi sẽ báo lỗi; không tự chuyển sang rule-only. `metadata.json`
+ở root ghi cấu hình model nội bộ, không thuộc ZIP nộp bài. Số tham số GPT-4o-mini
+chưa được xác nhận dưới 10B.
+
 ```bash
 day09 run
 day09 validate

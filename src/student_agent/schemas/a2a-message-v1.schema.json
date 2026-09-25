@@ -1,0 +1,1119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://student-agent.local/schemas/a2a-message-v1.schema.json",
+  "title": "Internal A2A message V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "message_id",
+    "run_id",
+    "case_id",
+    "task_id",
+    "in_reply_to",
+    "sender",
+    "recipient",
+    "message_type",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "internal-a2a-v1"
+    },
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "in_reply_to": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "sender": {
+      "enum": [
+        "coordinator",
+        "entity-agent",
+        "order-agent",
+        "shipment-agent",
+        "payment-agent",
+        "policy-agent",
+        "verifier"
+      ]
+    },
+    "recipient": {
+      "enum": [
+        "coordinator",
+        "entity-agent",
+        "order-agent",
+        "shipment-agent",
+        "payment-agent",
+        "policy-agent",
+        "verifier"
+      ]
+    },
+    "message_type": {
+      "enum": [
+        "task",
+        "result",
+        "evidence_request",
+        "error"
+      ]
+    },
+    "payload": {}
+  },
+  "$defs": {
+    "finding": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/entity_resolution"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/entity_resolution"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/customer_context"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/customer_context"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/affected_entities"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/entities"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/shipment_analysis"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/shipment_analysis"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/payment_analysis"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/payment_analysis"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/root_cause_analysis"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/rootCause"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/claim_assessments"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/claim_assessments"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/financial_resolution"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/financialResolution"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/data_conflicts"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/data_conflicts"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding_id",
+            "claim_ids",
+            "field_path",
+            "value",
+            "evidence_refs",
+            "confidence"
+          ],
+          "properties": {
+            "finding_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "claim_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "field_path": {
+              "const": "/resolution_actions"
+            },
+            "value": {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/resolution_actions"
+            },
+            "evidence_refs": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs",
+              "minItems": 1
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_type",
+        "order_ids",
+        "claim_ids",
+        "evidence_refs",
+        "max_new_tool_calls",
+        "context",
+        "draft"
+      ],
+      "properties": {
+        "task_type": {
+          "enum": [
+            "resolve_entity",
+            "analyze_order",
+            "analyze_shipment",
+            "analyze_payment",
+            "decide_policy",
+            "verify"
+          ]
+        },
+        "order_ids": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/idSet"
+        },
+        "claim_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "minItems": 0,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        },
+        "max_new_tool_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidate_order_ids",
+            "claimed_order_id",
+            "customer_unique_id_hint",
+            "policy_version"
+          ],
+          "properties": {
+            "candidate_order_ids": {
+              "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/idSet"
+            },
+            "claimed_order_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "customer_unique_id_hint": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "policy_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        },
+        "draft": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "task_type": {
+                "const": "verify"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "draft": {
+                "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "draft": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_type",
+        "status",
+        "evidence_refs",
+        "missing_evidence",
+        "confidence",
+        "entity_resolution",
+        "customer_context",
+        "candidate_evaluations"
+      ],
+      "properties": {
+        "result_type": {
+          "const": "entity"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "partial"
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        },
+        "missing_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "minItems": 0,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "entity_resolution": {
+          "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/entity_resolution"
+        },
+        "customer_context": {
+          "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/customer_context"
+        },
+        "candidate_evaluations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "order_id",
+              "status",
+              "reason_code",
+              "evidence_refs"
+            ],
+            "properties": {
+              "order_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "status": {
+                "enum": [
+                  "accepted",
+                  "rejected",
+                  "unresolved"
+                ]
+              },
+              "reason_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "evidence_refs": {
+                "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 20,
+          "uniqueItems": true
+        }
+      }
+    },
+    "specialist": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_type",
+        "domain",
+        "status",
+        "evidence_refs",
+        "missing_evidence",
+        "confidence",
+        "findings",
+        "conflicts"
+      ],
+      "properties": {
+        "result_type": {
+          "const": "specialist"
+        },
+        "domain": {
+          "enum": [
+            "order",
+            "shipment",
+            "payment"
+          ]
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "partial"
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        },
+        "missing_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "minItems": 0,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          },
+          "minItems": 0,
+          "maxItems": 30,
+          "uniqueItems": true
+        },
+        "conflicts": {
+          "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/data_conflicts"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_type",
+        "status",
+        "evidence_refs",
+        "missing_evidence",
+        "confidence",
+        "policy_version",
+        "claim_assessments",
+        "data_conflicts",
+        "financial_resolution",
+        "resolution_actions",
+        "root_cause_analysis"
+      ],
+      "properties": {
+        "result_type": {
+          "const": "policy"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "partial"
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        },
+        "missing_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "minItems": 0,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "claim_assessments": {
+          "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/claim_assessments"
+        },
+        "data_conflicts": {
+          "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/data_conflicts"
+        },
+        "financial_resolution": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/financialResolution"
+        },
+        "resolution_actions": {
+          "$ref": "https://day09.vinaction.local/contracts/l3b-output-v2.schema.json#/properties/resolution_actions"
+        },
+        "root_cause_analysis": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/rootCause"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_type",
+        "passed",
+        "violations",
+        "required_followups",
+        "evidence_refs"
+      ],
+      "properties": {
+        "result_type": {
+          "const": "verification"
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "field_path",
+              "severity"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "field_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "severity": {
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 50,
+          "uniqueItems": true
+        },
+        "required_followups": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "minItems": 0,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "passed": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required_followups": {
+                "maxItems": 0
+              },
+              "violations": {
+                "items": {
+                  "properties": {
+                    "severity": {
+                      "const": "warning"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "violations": {
+                "contains": {
+                  "properties": {
+                    "severity": {
+                      "const": "error"
+                    }
+                  }
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "result": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/entity"
+        },
+        {
+          "$ref": "#/$defs/specialist"
+        },
+        {
+          "$ref": "#/$defs/policy"
+        },
+        {
+          "$ref": "#/$defs/verification"
+        }
+      ]
+    },
+    "evidence_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domains",
+        "order_ids",
+        "reason_code",
+        "evidence_refs"
+      ],
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "order",
+              "item",
+              "payment",
+              "shipment",
+              "seller",
+              "customer",
+              "product",
+              "refund",
+              "policy"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 9,
+          "uniqueItems": true
+        },
+        "order_ids": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/idSet"
+        },
+        "reason_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "retryable",
+        "evidence_refs"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "evidence_refs": {
+          "$ref": "https://day09.vinaction.local/contracts/l3a-output-v2.schema.json#/$defs/evidenceRefs"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "message_type": {
+          "const": "task"
+        },
+        "payload": {
+          "$ref": "#/$defs/task"
+        },
+        "in_reply_to": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "result"
+        },
+        "payload": {
+          "$ref": "#/$defs/result"
+        },
+        "in_reply_to": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "evidence_request"
+        },
+        "payload": {
+          "$ref": "#/$defs/evidence_request"
+        },
+        "in_reply_to": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "error"
+        },
+        "payload": {
+          "$ref": "#/$defs/error"
+        },
+        "in_reply_to": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    }
+  ]
+}

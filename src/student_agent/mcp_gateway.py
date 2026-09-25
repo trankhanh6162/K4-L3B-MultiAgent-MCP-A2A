@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx2
-from mcp import ClientSession
+from mcp import ClientSession, types
 from mcp.client.streamable_http import streamable_http_client
 
 from .contracts import Contracts
@@ -18,13 +18,34 @@ class EvidenceGateway:
         self._contracts = contracts
 
     async def list_tools(self) -> list[str]:
-        response = await self._session.list_tools()
-        return sorted(tool.name for tool in response.tools)
+        return sorted(tool["name"] for tool in await self.discover_tools())
 
-    async def call(self, tool_name: str, *, case_id: str, **arguments: str) -> dict[str, Any]:
+    async def discover_tools(self) -> list[dict[str, Any]]:
+        """Preserve argument contracts and follow discovery pagination."""
+        descriptors = []
+        cursor = None
+        seen = set()
+        while True:
+            params = types.PaginatedRequestParams(cursor=cursor) if cursor else None
+            response = await self._session.list_tools(params=params)
+            descriptors.extend(
+                {"name": tool.name, "description": tool.description,
+                 "inputSchema": tool.input_schema}
+                for tool in response.tools
+            )
+            cursor = response.next_cursor
+            if not cursor:
+                return descriptors
+            if cursor in seen:
+                raise RuntimeError("Repeated MCP discovery cursor")
+            seen.add(cursor)
+
+    async def call(self, tool_name: str, *, case_id: str, **arguments: Any) -> dict[str, Any]:
         payload = {"case_id": case_id, **arguments}
         result = await self._session.call_tool(tool_name, arguments=payload)
-        if result.isError:
+        if not isinstance(result, types.CallToolResult):
+            raise RuntimeError(f"MCP tool {tool_name} did not return a completed tool result")
+        if result.is_error:
             message = " ".join(
                 block.text for block in result.content if getattr(block, "text", None)
             )

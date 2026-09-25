@@ -1,0 +1,12 @@
+{
+  "purpose": "Local model configuration record; not a submission artifact",
+  "provider": "openai",
+  "model": "gpt-4o-mini",
+  "parameter_count": null,
+  "under_10b_verified": false,
+  "api": "chat.completions",
+  "response_format": "json_schema",
+  "temperature": 0,
+  "roles": ["coordinator", "entity-agent", "order-agent", "shipment-agent", "payment-agent", "policy-agent", "verifier"],
+  "python_responsibilities": ["MCP permissions", "evidence provenance", "Decimal arithmetic", "A2A contracts", "final schema and invariant checks"]
+}
