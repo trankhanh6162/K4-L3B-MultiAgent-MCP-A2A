@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+import os
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from pathlib import Path
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -156,6 +159,18 @@ def _select_tool(
     return spec, args
 
 
+def _debug_dump(case_id: str, tool: str, args: dict[str, Any], payload: Any) -> None:
+    """Local-only evidence dump for development (set DAY09_DEBUG_DIR); never packaged."""
+    directory = os.environ.get("DAY09_DEBUG_DIR")
+    if not directory:
+        return
+    target = Path(directory) / f"{case_id}.jsonl"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding="utf-8") as handle:
+        record = {"tool": tool, "args": args, "evidence": payload}
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
 async def _consume(
     state: InvestigationState, domain: str, actor: str, context: dict[str, Any]
 ) -> dict[str, Any] | None:
@@ -169,8 +184,10 @@ async def _consume(
     except (TimeoutError, OSError, RuntimeError, ValueError) as exc:
         # Tool errors (e.g. unknown candidate order) are evidence of absence, not a crash.
         state.setdefault("tool_errors", []).append(f"{spec.name}: {exc}")
+        _debug_dump(case["case_id"], spec.name, args, {"error": str(exc)})
         return None
     ref = evidence["evidence_ref"]
+    _debug_dump(case["case_id"], spec.name, args, evidence)
     state["ledger"][ref] = {**evidence, "tool_name": spec.name, "consumer": actor}
     state["by_domain"].setdefault(evidence["domain"], []).append(evidence)
     trace.emit(
