@@ -45,6 +45,8 @@ day09 --help
 COMPETITION_API_URL=http://127.0.0.1:8081
 COMPETITION_TEAM_API_KEY=sk-team-your_key
 MCP_ENDPOINT=http://127.0.0.1:8001/mcp
+OPENAI_API_KEY=sk-your_openai_key
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ## 3. Tải input
@@ -149,6 +151,12 @@ Hoàn thiện mô tả thiết kế trong `ARCHITECTURE.md`.
 ```bash
 day09 run
 day09 validate
+```
+
+Nếu run bị ngắt sau khi một số case đã finalize, tiếp tục mà không gọi lại các case đó:
+
+```bash
+day09 run --resume
 ```
 
 Kết quả được tạo tại:

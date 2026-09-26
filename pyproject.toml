@@ -12,7 +12,7 @@ dependencies = [
     "jsonschema[format]>=4.25,<5",
     "langgraph>=0.6,<2",
     "mcp>=2,<3",
-    "openai>=1.100,<3",
+    "openai>=2,<4",
     "python-dotenv>=1.1,<2",
 ]
 

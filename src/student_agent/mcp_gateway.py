@@ -22,64 +22,29 @@ class EvidenceGateway:
         self._cache: dict[str, dict[str, Any]] = {}
 
     async def list_tools(self) -> list[str]:
-        await self.discover()
-        return sorted(self._tools or {})
+        response = await self._session.list_tools()
+        return sorted(tool.name for tool in response.tools)
 
-    async def discover(self) -> dict[str, ToolSpec]:
-        if self._tools is None:
-            response = await self._session.list_tools()
-            self._tools = {
-                tool.name: ToolSpec(
-                    name=tool.name,
-                    description=tool.description or "",
-                    input_schema=getattr(tool, "inputSchema", None)
-                    or getattr(tool, "input_schema", None)
-                    or {},
-                )
+    async def describe_tools(self) -> list[dict[str, Any]]:
+        response = await self._session.list_tools()
+        return sorted(
+            (
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.inputSchema,
+                }
                 for tool in response.tools
-            }
-        return self._tools
-
-    async def find_tool(self, domain: str, required_arguments: set[str]) -> ToolSpec | None:
-        tools = await self.discover()
-        domain_tokens = {
-            "order": ("order", "pedido"),
-            "customer": ("customer", "history", "cliente"),
-            "item": ("item", "product", "seller"),
-            "shipment": ("shipment", "shipping", "delivery", "freight", "logistics"),
-            "payment": ("payment", "charge", "capture"),
-            "refund": ("refund", "reimburse"),
-            "policy": ("policy", "eligibility", "rule"),
-        }.get(domain, (domain,))
-        ranked: list[tuple[int, ToolSpec]] = []
-        for spec in tools.values():
-            haystack = f"{spec.name} {spec.description}".lower()
-            properties = set(spec.input_schema.get("properties", {}))
-            required = set(spec.input_schema.get("required", [])) - {"case_id"}
-            if not required.issubset(required_arguments):
-                continue
-            score = sum(3 for token in domain_tokens if token in haystack)
-            score += len(properties & required_arguments)
-            if score:
-                ranked.append((score, spec))
-        return max(ranked, key=lambda item: (item[0], item[1].name))[1] if ranked else None
+            ),
+            key=lambda tool: tool["name"],
+        )
 
     async def call(self, tool_name: str, *, case_id: str, **arguments: str) -> dict[str, Any]:
         payload = {"case_id": case_id, **arguments}
-        cache_key = json.dumps([case_id, tool_name, payload], sort_keys=True, separators=(",", ":"))
-        if cache_key in self._cache:
-            return self._cache[cache_key]
-        result = None
-        for attempt in range(2):
-            try:
-                result = await self._session.call_tool(tool_name, arguments=payload)
-                break
-            except (TimeoutError, OSError):
-                if attempt:
-                    raise
-                await asyncio.sleep(0)
-        assert result is not None
-        is_error = getattr(result, "is_error", getattr(result, "isError", False))
+        result = await self._session.call_tool(tool_name, arguments=payload)
+        is_error = getattr(result, "isError", None)
+        if is_error is None:
+            is_error = getattr(result, "is_error", False)
         if is_error:
             message = " ".join(
                 block.text for block in result.content if getattr(block, "text", None)
@@ -97,12 +62,8 @@ class EvidenceGateway:
         self._cache[cache_key] = evidence
         return evidence
 
-
-@dataclass(frozen=True)
-class ToolSpec:
-    name: str
-    description: str
-    input_schema: dict[str, Any]
+    def validate_output(self, output: dict[str, Any], source: str) -> None:
+        self._contracts.validate_output(output, source)
 
 
 @asynccontextmanager
@@ -111,10 +72,9 @@ async def connect_gateway(
 ) -> AsyncIterator[EvidenceGateway]:
     headers = {"Authorization": f"Bearer {team_api_key}"}
     timeout = httpx2.Timeout(300.0, connect=30.0, write=30.0, pool=30.0)
-    async with (
-        httpx2.AsyncClient(headers=headers, timeout=timeout) as http_client,
-        streamable_http_client(endpoint, http_client=http_client) as (read_stream, write_stream),
-        ClientSession(read_stream, write_stream) as session,
-    ):
-        await session.initialize()
-        yield EvidenceGateway(session, contracts)
+    async with httpx2.AsyncClient(headers=headers, timeout=timeout) as http_client:  # noqa: SIM117
+        async with streamable_http_client(endpoint, http_client=http_client) as transport:
+            read_stream, write_stream = transport[:2]
+            async with ClientSession(read_stream, write_stream) as session:
+                await session.initialize()
+                yield EvidenceGateway(session, contracts)
